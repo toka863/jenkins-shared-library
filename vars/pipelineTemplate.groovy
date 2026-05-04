@@ -5,14 +5,17 @@ def call(Map config = [:]) {
         agent any
 
         tools {
-            maven 'mvn-iti'
+            maven 'maven-tag'
             jdk 'JDK17-ITI'
         }
 
         environment {
             IMAGE_NAME = config.imageName
-            IMAGE_TAG  = "latest"
+            IMAGE_TAG  = config.imageTag ?: "latest"
             PORT       = config.port
+            AWS_REGION = config.region ?: "us-east-1"
+            ECR_REPO   = config.ecrRepo
+            ACCOUNT_ID = config.accountId
         }
 
         stages {
@@ -47,16 +50,43 @@ def call(Map config = [:]) {
                 }
             }
 
+            stage('Login to ECR') {
+                steps {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-creds'
+                    ]]) {
+                        sh '''
+                        aws ecr get-login-password --region $AWS_REGION \
+                        | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                        '''
+                    }
+                }
+            }
+
+            stage('Tag Image') {
+                steps {
+                    sh '''
+                    docker tag $IMAGE_NAME:$IMAGE_TAG \
+                    $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                    '''
+                }
+            }
+
             stage('Push Image') {
                 steps {
-                    sh "echo pushing image..."
-                    // docker push لو عندك registry
+                    sh '''
+                    docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                    '''
                 }
             }
 
             stage('Deploy') {
                 steps {
-                    sh "docker run -d -p $PORT:8080 $IMAGE_NAME:$IMAGE_TAG"
+                    sh '''
+                    docker run -d -p $PORT:8080 \
+                    $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                    '''
                 }
             }
         }
