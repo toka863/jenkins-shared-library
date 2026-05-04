@@ -22,7 +22,7 @@ def call(Map config = [:]) {
 
             stage('Clone') {
                 steps {
-                    git url: config.repo
+                    git url: config.repo, branch: 'main'
                 }
             }
 
