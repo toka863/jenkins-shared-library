@@ -10,12 +10,12 @@ def call(Map config = [:]) {
         }
 
         environment {
-            IMAGE_NAME = config.imageName
-            IMAGE_TAG  = config.imageTag ?: "latest"
-            PORT       = config.port
-            AWS_REGION = config.region ?: "us-east-1"
-            ECR_REPO   = config.ecrRepo
-            ACCOUNT_ID = config.accountId
+            IMAGE_NAME = "${config.imageName}"
+            IMAGE_TAG  = "${config.imageTag ?: 'latest'}"
+            PORT = "${config.port}"
+            AWS_REGION = "${config.region ?: 'us-east-1'}"
+            ECR_REPO   = "${config.ecrRepo}"
+            ACCOUNT_ID = "${config.accountId}"
         }
 
         stages {
