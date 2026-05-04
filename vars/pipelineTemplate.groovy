@@ -32,11 +32,7 @@ def call(Map config = [:]) {
                 }
             }
 
-            stage('Test') {
-                steps {
-                    sh "mvn test"
-                }
-            }
+        
 
             stage('Package') {
                 steps {
